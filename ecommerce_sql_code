@@ -1,0 +1,101 @@
+
+-- E-Commerce Sales Analysis Project
+-- Database creation
+CREATE DATABASE IF NOT EXISTS ecommerce;
+USE ecommerce;
+
+-- Remove old tables when setting up this demo from scratch
+DROP TABLE IF EXISTS Orders;
+DROP TABLE IF EXISTS Customers;
+
+-- Create Customers table
+CREATE TABLE Customers (
+    customer_id INT PRIMARY KEY,
+    customer_name VARCHAR(100),
+    city VARCHAR(50)
+);
+
+-- Create Orders table
+CREATE TABLE Orders (
+    order_id INT PRIMARY KEY,
+    customer_id INT,
+    product VARCHAR(100),
+    quantity INT,
+    price DECIMAL(10,2),
+    order_date DATE,
+    FOREIGN KEY (customer_id)
+        REFERENCES Customers(customer_id)
+);
+
+-- Insert customer data
+INSERT INTO Customers
+(customer_id, customer_name, city)
+VALUES
+(1, 'Rahul', 'Delhi'),
+(2, 'Raj', 'Noida'),
+(3, 'Amrita', 'Delhi'),
+(4, 'Ashmita', 'Renukoot');
+
+-- Insert order data
+-- Unknown dates are kept NULL, not guessed
+INSERT INTO Orders
+(order_id, customer_id, product, quantity, price, order_date)
+VALUES
+(101, 1, 'Laptop',   1, 45000.00, NULL),
+(102, 2, 'Mouse',    2,   500.00, NULL),
+(103, 1, 'Keyboard', 1,  1200.00, NULL),
+(104, 3, 'Laptop',   1, 45000.00, NULL),
+(105, 4, 'Mouse',    3,   500.00, '2026-10-20');
+
+-- 1. Final combined table
+SELECT
+    o.order_id,
+    c.customer_name,
+    c.city,
+    o.product,
+    o.quantity,
+    o.price,
+    (o.quantity * o.price) AS total_amount,
+    o.order_date
+FROM Customers c
+JOIN Orders o
+    ON c.customer_id = o.customer_id
+ORDER BY o.order_id;
+
+-- 2. Product-wise sales
+SELECT
+    product,
+    SUM(quantity) AS total_quantity_sold,
+    SUM(quantity * price) AS total_sales
+FROM Orders
+GROUP BY product
+ORDER BY total_sales DESC;
+
+-- 3. Customer-wise revenue
+SELECT
+    c.customer_name,
+    SUM(o.quantity * o.price) AS total_spent
+FROM Customers c
+JOIN Orders o
+    ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.customer_name
+ORDER BY total_spent DESC;
+
+-- 4. Monthly sales
+SELECT
+    DATE_FORMAT(order_date, '%Y-%m') AS sales_month,
+    SUM(quantity * price) AS monthly_revenue
+FROM Orders
+WHERE order_date IS NOT NULL
+GROUP BY DATE_FORMAT(order_date, '%Y-%m')
+ORDER BY sales_month;
+
+-- 5. Overall revenue
+SELECT
+    SUM(quantity * price) AS total_revenue
+FROM Orders;
+
+-- 6. Total number of orders
+SELECT
+    COUNT(*) AS total_orders
+FROM Orders;
